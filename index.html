@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TROBA EL RITME</title>
+<!-- Importar canvas-confetti per a animacions professionals de confeti -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<style>
+
+:root{
+    color-scheme:light;
+    --page-bg:#eef5ff;
+    --page-text:#27364a;
+    --heading:#0D47A1;
+    --subheading:#555;
+    --control-bg:#fff;
+    --control-text:#1e293b;
+    --card-bg:#fff;
+    --card-border:#ccc;
+    --note-color:#000;
+    --correct-bg:#c8e6c9;
+    --correct-border:#2e7d32;
+    --wrong-bg:#ffcdd2;
+    --wrong-border:#c62828;
+}
+
+body.mode-fosc{
+    color-scheme:dark;
+    --page-bg:#101827;
+    --page-text:#e5edf7;
+    --heading:#9fc5ff;
+    --subheading:#b8c6d9;
+    --control-bg:#1d2b3f;
+    --control-text:#eff5ff;
+    --card-bg:#182538;
+    --card-border:#53657e;
+    --note-color:#f4f6fa;
+    --correct-bg:#163b2f;
+    --correct-border:#45a878;
+    --wrong-bg:#4a2730;
+    --wrong-border:#e77786;
+}
+
+html, body {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: var(--page-bg);
+    color: var(--page-text);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 10px 20px;
+}
+
+header {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    flex-shrink: 0;
+}
+
+h1{
+    color: var(--heading);
+    margin: 0 0 2px 0;
+    font-size: clamp(20px, 3vw, 28px);
+}
+
+h2{
+    color: var(--subheading);
+    font-weight: normal;
+    margin: 0 0 6px 0;
+    font-size: clamp(13px, 1.8vw, 16px);
+}
+
+.tema-comptador{
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+#canviarTema{
+    margin: 0;
+    padding: 4px 8px;
+    font-size: 13px;
+}
+
+.estats-superior {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#comptador, #vides, #btnInsignies{
+    display: inline-block;
+    margin: 0;
+    padding: 4px 10px;
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    background: var(--control-bg);
+    color: var(--page-text);
+    font-weight: bold;
+    font-size: 13px;
+}
+
+#btnInsignies {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+#btnInsignies:hover {
+    background: var(--heading);
+    color: #fff;
+}
+
+.panell-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+}
+
+select,
+button{
+    padding: 6px 10px;
+    font-size: clamp(13px, 1.6vw, 15px);
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    background: var(--control-bg);
+    color: var(--control-text);
+    cursor: pointer;
+    transition: transform 0.1s ease, background-color 0.2s ease;
+}
+
+select:focus, button:focus {
+    outline: 3px solid var(--heading);
+    outline-offset: 2px;
+}
+
+.control-volum{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--page-text);
+    font-size: 13px;
+    background: var(--control-bg);
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+}
+
+.control-volum input{
+    width: 100px;
+    accent-color: var(--heading);
+    cursor: pointer;
+}
+
+#valorVolum{
+    min-width: 32px;
+    font-variant-numeric: tabular-nums;
+}
+
+.reproduint{
+    background-color: var(--heading) !important;
+    color: #fff !important;
+    animation: polsacio-boto 0.8s infinite alternate;
+}
+
+@keyframes polsacio-boto {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.04); }
+}
+
+main {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1;
+    justify-content: center;
+    min-height: 0;
+    position: relative;
+}
+
+#opcions{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    width: 100%;
+    max-width: 850px;
+}
+
+.opcio{
+    background: var(--card-bg);
+    border: 3px solid var(--card-border);
+    border-radius: 12px;
+    padding: clamp(8px, 1.8vh, 18px);
+    cursor: pointer;
+    transition: transform .2s, background-color .2s, border-color .2s;
+    animation: fadeInUp 0.4s ease-out forwards;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.opcio .tecla-accs {
+    position: absolute;
+    top: 6px;
+    left: 10px;
+    font-size: 12px;
+    opacity: 0.5;
+    font-weight: bold;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.opcio:hover{
+    transform: scale(1.02);
+}
+
+.ritme{
+    font-size: clamp(30px, 5.5vw, 50px);
+    color: var(--note-color);
+    line-height: 1.1;
+}
+
+.figura-unida{
+    display: inline-block;
+    height: clamp(30px, 5.5vw, 50px);
+    width: auto;
+    vertical-align: middle;
+    color: var(--note-color);
+}
+
+.correcta{
+    background: var(--correct-bg) !important;
+    border-color: var(--correct-border) !important;
+}
+
+.incorrecta{
+    background: var(--wrong-bg) !important;
+    border-color: var(--wrong-border) !important;
+}
+
+#resultat{
+    height: 30px;
+    margin: 2px 0 6px 0;
+    font-size: clamp(18px, 2.5vw, 22px);
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+/* Pantalla Game Over i Modal d'Insígnies */
+.overlay-pantalla {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    display: none;
+}
+
+.modal-contingut {
+    background: var(--control-bg);
+    color: var(--page-text);
+    padding: 30px;
+    border-radius: 16px;
+    text-align: center;
+    max-width: 450px;
+    width: 90%;
+    border: 2px solid var(--card-border);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.modal-contingut h2 {
+    color: var(--heading);
+    margin-top: 0;
+}
+
+.graella-insignies {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.insignia-item {
+    background: var(--page-bg);
+    border: 2px solid var(--card-border);
+    border-radius: 10px;
+    padding: 10px;
+    opacity: 0.4;
+    filter: grayscale(1);
+    transition: 0.3s;
+}
+
+.insignia-item.desbloquejada {
+    opacity: 1;
+    filter: grayscale(0);
+    border-color: var(--correct-border);
+    background: var(--correct-bg);
+}
+
+.insignia-icon {
+    font-size: 28px;
+    margin-bottom: 4px;
+}
+
+.insignia-nom {
+    font-size: 11px;
+    font-weight: bold;
+}
+
+@media(max-width: 600px){
+    #opcions{
+        gap: 8px;
+    }
+    .tema-comptador {
+        position: relative;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+    html, body {
+        padding: 4px 10px;
+    }
+}
+
+</style>
+</head>
+<body class="mode-fosc">
+
+<header>
+    <div class="tema-comptador">
+        <button
+            id="canviarTema"
+            type="button"
+            onclick="canviarTema()"
+            aria-label="Canvia al mode de dia"
+        >
+        ☀️ Mode de dia
+        </button>
+        <div class="estats-superior">
+            <div id="vides" title="Vides restants">❤️❤️❤️</div>
+            <div id="comptador" aria-live="polite">Encerts: 0</div>
+            <div id="btnInsignies" onclick="obrirInsignies()" title="Veure Assoliments">🏆 Medalles</div>
+        </div>
+    </div>
+
+    <h1>TROBA EL RITME</h1>
+    <h2>Miquel Castellà</h2>
+</header>
+
+<div class="panell-controls">
+    <select id="nivell" onchange="nouExercici()" aria-label="Selecciona el nivell">
+        <option value="1">Nivell 1 · Negra i silenci</option>
+        <option value="2">Nivell 2 · Negra i corxeres</option>
+        <option value="3">Nivell 3 · Negra, silenci i corxeres</option>
+        <option value="4">Nivell 4 · Negra, corxeres i semicorxeres</option>
+    </select>
+
+    <button onclick="nouExercici()" aria-label="Generar nou exercici">
+    🔊 Escolta el ritme <small>(Enter)</small>
+    </button>
+
+    <button
+        id="repetirRitme"
+        type="button"
+        onclick="repetirRitme()"
+        aria-label="Torna a sentir el ritme"
+    >
+    🔁 Repetir <small>(Espai)</small>
+    </button>
+
+    <div class="control-volum">
+        <label for="volum">Volum</label>
+        <input
+            id="volum"
+            type="range"
+            min="0"
+            max="100"
+            value="100"
+            aria-label="Volum de reproducció"
+        >
+        <span id="valorVolum" aria-live="polite">100%</span>
+    </div>
+</div>
+
+<main>
+    <div id="opcions"></div>
+
+    <!-- Pantalla Game Over -->
+    <div id="gameOverModal" class="overlay-pantalla">
+        <div class="modal-contingut">
+            <h2>Game Over</h2>
+            <p>T'has quedat sense vides! Has completat un total de <strong id="fitaFinalEncerts">0</strong> encerts.</p>
+            <button onclick="reiniciarPartida()" style="background:var(--heading); color:#fff; font-weight:bold;">Tornar a començar</button>
+        </div>
+    </div>
+
+    <!-- Panell d'Insígnies -->
+    <div id="insigniesModal" class="overlay-pantalla">
+        <div class="modal-contingut" style="max-width:500px;">
+            <h2>Panell d'Assoliments</h2>
+            <div class="graella-insignies" id="graellaInsignies">
+                <!-- Generat dinàmicament -->
+            </div>
+            <button onclick="tancarInsignies()">Tancar</button>
+        </div>
+    </div>
+</main>
+
+<div id="resultat" aria-live="polite"></div>
+
+<script>
+
+const ritmes={
+1:[
+"N R N R",
+"R N R N",
+"N N R N",
+"R R N N",
+"N N N R",
+"R R R N"
+],
+2:[
+"N E N E",
+"E N E N",
+"N N E E",
+"E E N N",
+"E N N E",
+"N E E N"
+],
+3:[
+"N E R N",
+"R N E N",
+"N R E E",
+"E N R N",
+"R E N R",
+"N N R E"
+],
+4:[
+"N S N E",
+"S N E N",
+"N E S N",
+"S S N N",
+"E S N S",
+"S N S E"
+]
+};
+
+let correcta="";
+let guanyGeneralActiu=null;
+let ctxActiu=null;
+let encerts=0;
+let vides=3;
+let ratxaConsecutiva=0;
+
+// Sistema d'insígnies
+const llistaAssoliments = [
+    { id: 'primer', nom: 'Primer Encert', icon: '🎵', condicio: () => encerts >= 1 },
+    { id: 'ratxa5', nom: 'Ratxa de 5', icon: '🔥', condicio: () => ratxaConsecutiva >= 5 || encerts >= 5 },
+    { id: 'mestre', nom: 'Oïda de Plata', icon: '🥈', condicio: () => encerts >= 10 },
+    { id: 'expert', nom: 'Mestre del Ritme', icon: '🏆', condicio: () => encerts >= 20 },
+    { id: 'nivell4', nom: 'Expert Semicorxeres', icon: '⚡', condicio: () => document.getElementById("nivell").value == "4" && encerts >= 5 }
+];
+
+let assolimentsDesbloquejats = JSON.parse(localStorage.getItem('ritmes_assoliments') || '[]');
+
+window.addEventListener('DOMContentLoaded', () => {
+    const volumGuardat = localStorage.getItem('ritmes_volum');
+    if(volumGuardat !== null) {
+        document.getElementById("volum").value = volumGuardat;
+    }
+    actualitzarVolum();
+    actualitzarVidesUI();
+});
+
+function actualitzarVolum(){
+    const control=document.getElementById("volum");
+    const percentatge=Number(control.value);
+    document.getElementById("valorVolum").textContent=percentatge+"%";
+    localStorage.setItem('ritmes_volum', percentatge);
+    if(guanyGeneralActiu){
+        guanyGeneralActiu.gain.setTargetAtTime((percentatge/100)*1.5, guanyGeneralActiu.context.currentTime, 0.015);
+    }
+}
+
+document.getElementById("volum").addEventListener("input",actualitzarVolum);
+
+function canviarTema(){
+    const fosc=document.body.classList.toggle("mode-fosc");
+    const boto=document.getElementById("canviarTema");
+    boto.textContent=fosc ? "☀️ Mode de dia" : "🌙 Mode fosc";
+    boto.setAttribute("aria-label", fosc ? "Canvia al mode de dia" : "Canvia al mode fosc");
+}
+
+function simbol(token){
+    if(token==="N") return "♩";
+    if(token==="R") return "𝄽";
+    if(token==="E") return `
+        <svg class="figura-unida" viewBox="0 0 82 70" role="img" aria-label="Dues corxeres unides">
+            <g fill="currentColor">
+                <ellipse cx="22" cy="55" rx="9" ry="6" transform="rotate(-25 22 55)"/>
+                <ellipse cx="58" cy="55" rx="9" ry="6" transform="rotate(-25 58 55)"/>
+            </g>
+            <g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round">
+                <path d="M30 52V14 M66 52V18 M30 14L66 18"/>
+            </g>
+        </svg>`;
+    if(token==="S") return `
+        <svg class="figura-unida" viewBox="0 0 116 70" role="img" aria-label="Quatre semicorxeres unides">
+            <g fill="currentColor">
+                <ellipse cx="16" cy="55" rx="8" ry="6" transform="rotate(-25 16 55)"/>
+                <ellipse cx="43" cy="55" rx="8" ry="6" transform="rotate(-25 43 55)"/>
+                <ellipse cx="70" cy="55" rx="8" ry="6" transform="rotate(-25 70 55)"/>
+                <ellipse cx="97" cy="55" rx="8" ry="6" transform="rotate(-25 97 55)"/>
+            </g>
+            <g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round">
+                <path d="M24 52V14 M51 52V15 M78 52V16 M105 52V18 M24 14L105 18 M24 22L105 26"/>
+            </g>
+        </svg>`;
+}
+
+function convertir(text){
+    return text.split(" ").map(simbol).join(" ");
+}
+
+function nouExercici(){
+    if(vides <= 0) return;
+    document.getElementById("resultat").innerHTML="";
+    let nivell=document.getElementById("nivell").value;
+    let llista=ritmes[nivell];
+    correcta=llista[Math.floor(Math.random()*llista.length)];
+    let opcions=[correcta];
+    while(opcions.length<4){
+        let candidat=llista[Math.floor(Math.random()*llista.length)];
+        if(!opcions.includes(candidat)){
+            opcions.push(candidat);
+        }
+    }
+    opcions.sort(()=>Math.random()-0.5);
+    mostrarOpcions(opcions);
+    reproduirRitme(correcta);
+}
+
+function repetirRitme(){
+    if(correcta && vides > 0){
+        reproduirRitme(correcta);
+    }
+}
+
+function mostrarOpcions(opcions){
+    let html="";
+    opcions.forEach((opcio, index)=>{
+        html+=`
+        <div class="opcio" onclick="comprovar(this,'${opcio}')" tabindex="0" role="button" aria-label="Opció ${index + 1}">
+            <span class="tecla-accs">[${index + 1}]</span>
+            <div class="ritme">
+                ${convertir(opcio)}
+            </div>
+        </div>
+        `;
+    });
+    document.getElementById("opcions").innerHTML=html;
+}
+
+function comprovar(element, resposta){
+    if(document.querySelector('.correcta') || document.querySelector('.incorrecta') || vides <= 0) return;
+
+    document.querySelectorAll(".opcio").forEach(o=>o.onclick=null);
+
+    if(resposta===correcta){
+        element.classList.add("correcta");
+        document.getElementById("resultat").innerHTML="✅ Correcte!";
+        encerts++;
+        ratxaConsecutiva++;
+        document.getElementById("comptador").textContent="Encerts: "+encerts;
+
+        // Llançament de confeti amb canvas-confetti per ratxes de 5 o 10
+        if(ratxaConsecutiva === 5 || ratxaConsecutiva === 10 || encerts % 5 === 0){
+            llançarConfetiFestiu();
+        }
+
+        comprovarAssoliments();
+
+        setTimeout(() => {
+            nouExercici();
+        }, 1200);
+    }
+    else{
+        element.classList.add("incorrecta");
+        ratxaConsecutiva = 0;
+        vides--;
+        actualitzarVidesUI();
+
+        document.querySelectorAll(".opcio").forEach(o => {
+            if(o.querySelector('.ritme').innerHTML.trim() === convertir(correcta).trim()) {
+                o.classList.add("correcta");
+            }
+        });
+
+        document.getElementById("resultat").innerHTML="❌ Incorrecte";
+
+        if(vides <= 0){
+            setTimeout(() => {
+                mostrarGameOver();
+            }, 1000);
+        } else {
+            setTimeout(() => {
+                nouExercici();
+            }, 1500);
+        }
+    }
+}
+
+function actualitzarVidesUI(){
+    let cors = "";
+    for(let i=0; i<3; i++){
+        cors += i < vides ? "❤️" : "🖤";
+    }
+    document.getElementById("vides").textContent = cors;
+}
+
+function mostrarGameOver(){
+    document.getElementById("fitaFinalEncerts").textContent = encerts;
+    document.getElementById("gameOverModal").style.display = "flex";
+}
+
+function reiniciarPartida(){
+    vides = 3;
+    encerts = 0;
+    ratxaConsecutiva = 0;
+    document.getElementById("comptador").textContent = "Encerts: 0";
+    actualitzarVidesUI();
+    document.getElementById("gameOverModal").style.display = "none";
+    nouExercici();
+}
+
+function llançarConfetiFestiu(){
+    confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+    });
+}
+
+function comprovarAssoliments(){
+    llistaAssoliments.forEach(a => {
+        if(!assolimentsDesbloquejats.includes(a.id) && a.condicio()){
+            assolimentsDesbloquejats.push(a.id);
+            localStorage.setItem('ritmes_assoliments', JSON.stringify(assolimentsDesbloquejats));
+            llançarConfetiFestiu();
+        }
+    });
+}
+
+function obrirInsignies(){
+    let html = "";
+    llistaAssoliments.forEach(a => {
+        const desbloquejada = assolimentsDesbloquejats.includes(a.id);
+        html += `
+            <div class="insignia-item ${desbloquejada ? 'desbloquejada' : ''}">
+                <div class="insignia-icon">${a.icon}</div>
+                <div class="insignia-nom">${a.nom}</div>
+            </div>
+        `;
+    });
+    document.getElementById("graellaInsignies").innerHTML = html;
+    document.getElementById("insigniesModal").style.display = "flex";
+}
+
+function tancarInsignies(){
+    document.getElementById("insigniesModal").style.display = "none";
+}
+
+/* SO TIPUS MARIMBA */
+function nota(ctx,inici,durada,freq,volum){
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.type="sine";
+    osc.frequency.value=freq;
+    gain.gain.setValueAtTime(0.0001,inici);
+    gain.gain.linearRampToValueAtTime(volum,inici+0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001,inici+durada);
+    osc.connect(gain);
+    gain.connect(guanyGeneralActiu || ctx.destination);
+    osc.start(inici);
+    osc.stop(inici+durada);
+}
+
+function sorollPercussiu(ctx,inici,durada,volum,tipusFiltre,frequencia){
+    const buffer=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*durada),ctx.sampleRate);
+    const mostres=buffer.getChannelData(0);
+    for(let i=0;i<mostres.length;i++){
+        mostres[i]=Math.random()*2-1;
+    }
+    const font=ctx.createBufferSource();
+    const filtre=ctx.createBiquadFilter();
+    const gain=ctx.createGain();
+    font.buffer=buffer;
+    filtre.type=tipusFiltre;
+    filtre.frequency.value=frequencia;
+    filtre.Q.value=0.8;
+    gain.gain.setValueAtTime(0.0001,inici);
+    gain.gain.linearRampToValueAtTime(volum,inici+0.002);
+    gain.gain.exponentialRampToValueAtTime(0.0001,inici+durada);
+    font.connect(filtre);
+    filtre.connect(gain);
+    gain.connect(guanyGeneralActiu || ctx.destination);
+    font.start(inici);
+    font.stop(inici+durada);
+}
+
+function soClaqueta(ctx,inici,accentat){
+    sorollPercussiu(ctx,inici,0.025,accentat ? 0.42 : 0.14,"highpass",2500);
+}
+
+function soCaixa(ctx,inici){
+    sorollPercussiu(ctx,inici,0.12,0.32,"bandpass",1700);
+    nota(ctx,inici,0.08,180,0.06);
+}
+
+function pulsacio(ctx,inici,polsos,duradaNegra){
+    for(let i=0;i<polsos;i++){
+        soClaqueta(ctx,inici+(i*duradaNegra),i===0);
+    }
+}
+
+function reproduirRitme(patró){
+    if(ctxActiu && ctxActiu.state !== 'closed') {
+        try { ctxActiu.close(); } catch(e){}
+    }
+    const ctx=new(window.AudioContext || window.webkitAudioContext)();
+    ctxActiu = ctx;
+    guanyGeneralActiu=ctx.createGain();
+    guanyGeneralActiu.gain.value=(Number(document.getElementById("volum").value)/100)*1.5;
+
+    const limitador=ctx.createDynamicsCompressor();
+    limitador.threshold.value=-6;
+    limitador.knee.value=3;
+    limitador.ratio.value=10;
+    limitador.attack.value=0.003;
+    limitador.release.value=0.18;
+
+    guanyGeneralActiu.connect(limitador);
+    limitador.connect(ctx.destination);
+
+    const bpm=60;
+    const duradaNegra=60/bpm;
+    let temps=ctx.currentTime;
+
+    pulsacio(ctx,temps,4,duradaNegra);
+
+    patró.split(" ").forEach(figura=>{
+        if(figura==="N"){
+            soCaixa(ctx,temps);
+            nota(ctx,temps,0.18,523,0.2);
+            temps+=duradaNegra;
+        }
+        else if(figura==="R"){
+            temps+=duradaNegra;
+        }
+        else if(figura==="E"){
+            soCaixa(ctx,temps);
+            nota(ctx,temps,0.08,523,0.2);
+            temps+=duradaNegra/2;
+            soCaixa(ctx,temps);
+            nota(ctx,temps,0.08,523,0.2);
+            temps+=duradaNegra/2;
+        }
+        else if(figura==="S"){
+            for(let i=0;i<4;i++){
+                soCaixa(ctx,temps);
+                nota(ctx,temps,0.04,523,0.18);
+                temps+=duradaNegra/4;
+            }
+        }
+    });
+
+    const duracioTotalMs = (temps - ctx.currentTime) * 1000;
+    const botonsAudio = [document.querySelector('button[onclick="nouExercici()"]'), document.getElementById('repetirRitme')];
+    
+    botonsAudio.forEach(b => b.classList.add('reproduint'));
+    setTimeout(() => {
+        botonsAudio.forEach(b => b.classList.remove('reproduint'));
+    }, duracioTotalMs);
+}
+
+document.addEventListener('keydown', (e) => {
+    if(['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName) && e.key !== 'Enter') return;
+    if(e.key >= '1' && e.key <= '4') {
+        const opcionsElements = document.querySelectorAll('.opcio');
+        const index = parseInt(e.key) - 1;
+        if(opcionsElements[index]) {
+            opcionsElements[index].click();
+        }
+    } else if(e.key === ' ') {
+        e.preventDefault();
+        repetirRitme();
+    } else if(e.key === 'Enter') {
+        e.preventDefault();
+        if(vides > 0) nouExercici();
+    }
+});
+
+nouExercici();
+
+</script>
+
+</body>
+</html>
